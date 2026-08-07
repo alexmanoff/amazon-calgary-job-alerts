@@ -30,4 +30,4 @@ MOM = Profile(
     ("software engineer", "data scientist", "maintenance technician"),
 )
 
-PROFILES = (ALEX, MOM)
+PROFILES = (ALEX,)
