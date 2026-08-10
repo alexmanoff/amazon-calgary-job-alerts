@@ -31,6 +31,9 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
+      - name: Dry run Alex filters
+        if: github.event_name == 'workflow_dispatch'
+        run: python dry_run_matches.py
       - name: Check Amazon jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
