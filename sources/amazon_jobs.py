@@ -12,7 +12,8 @@ URL = (
 
 JOB_URL_RE = re.compile(r"amazon\.jobs/(?:en/)?jobs/(\d+)", re.I)
 LOCATION_RE = re.compile(
-    r"(?:Calgary|Rocky View County|Rocky View|Balzac|Airdrie)\s*,?\s*(?:AB|Alberta)?\s*,?\s*(?:CAN|Canada)?",
+    r"(?:Calgary|Rocky View County|Rocky View|Balzac|Airdrie)"
+    r"(?:\s*,\s*(?:AB|Alberta))?(?:\s*,\s*(?:CAN|Canada))?",
     re.I,
 )
 
@@ -20,16 +21,31 @@ LOCATION_RE = re.compile(
 def _card_text(link) -> str:
     return link.evaluate(
         """el => {
-            const card = el.closest('li, article, [data-test*="job"], [class*="job"]');
-            if (card) return (card.innerText || '').trim();
             let node = el;
-            for (let i = 0; i < 4 && node; i++, node = node.parentElement) {
+            for (let i = 0; i < 7 && node; i++, node = node.parentElement) {
                 const text = (node.innerText || '').trim();
-                if (/Job ID:/i.test(text) && text.length < 2500) return text;
+                if (/Job ID:/i.test(text) && text.length < 3500) return text;
             }
             return (el.parentElement?.innerText || el.innerText || '').trim();
         }"""
     )
+
+
+def _context_for_job(body_text: str, job_id: str, radius: int = 700) -> str:
+    match = re.search(rf"Job ID:\s*{re.escape(job_id)}", body_text, re.I)
+    if not match:
+        return ""
+    start = max(0, match.start() - radius)
+    end = min(len(body_text), match.end() + radius)
+    return body_text[start:end]
+
+
+def _extract_location(*texts: str) -> str:
+    for text in texts:
+        match = LOCATION_RE.search(text or "")
+        if match:
+            return match.group(0).strip(" ,")
+    return ""
 
 
 def fetch_jobs() -> list[Job]:
@@ -51,6 +67,7 @@ def fetch_jobs() -> list[Job]:
             raise RuntimeError(f"amazon.jobs returned HTTP {response.status}")
 
         page.wait_for_timeout(5000)
+        body_text = page.locator("body").inner_text()
         links = page.locator('a[href*="/jobs/"]')
 
         jobs: list[Job] = []
@@ -73,9 +90,9 @@ def fetch_jobs() -> list[Job]:
 
             title = (link.inner_text() or "").strip() or "Amazon job"
             card_text = _card_text(link)
-
-            location_match = LOCATION_RE.search(card_text)
-            location = location_match.group(0).strip() if location_match else ""
+            context = _context_for_job(body_text, job_id)
+            location = _extract_location(card_text, context)
+            description = card_text or context
 
             jobs.append(
                 Job(
@@ -84,7 +101,7 @@ def fetch_jobs() -> list[Job]:
                     title=title,
                     location=location,
                     url=href,
-                    description=card_text,
+                    description=description,
                 )
             )
 
