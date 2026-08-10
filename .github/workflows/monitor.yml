@@ -31,17 +31,10 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Diagnose sources
-        if: github.event_name == 'workflow_dispatch'
-        run: python diagnose_sources.py
-      - name: Diagnose Amazon Hiring
-        if: github.event_name == 'workflow_dispatch'
-        run: python diagnose_hiring.py
-      - name: Check jobs
+      - name: Check HVR jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
-          MOM_CHAT_ID: ${{ secrets.MOM_CHAT_ID }}
           INITIALIZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_only || 'false' }}
         run: python monitor.py
       - name: Save state
