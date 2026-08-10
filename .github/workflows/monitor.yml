@@ -34,6 +34,9 @@ jobs:
       - name: Diagnose sources
         if: github.event_name == 'workflow_dispatch'
         run: python diagnose_sources.py
+      - name: Diagnose Amazon Hiring
+        if: github.event_name == 'workflow_dispatch'
+        run: python diagnose_hiring.py
       - name: Check jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
