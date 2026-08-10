@@ -75,10 +75,14 @@ MOM = Profile(
         "program manager",
         "project coordinator",
         "program coordinator",
+        "area manager",
         "operations manager",
         "operations coordinator",
-        "transportation",
+        "transportation manager",
+        "transportation coordinator",
+        "logistics manager",
         "logistics coordinator",
+        "fleet manager",
         "fleet coordinator",
         "safety coordinator",
         "compliance coordinator",
@@ -94,8 +98,11 @@ MOM = Profile(
         "software engineer",
         "data scientist",
         "maintenance technician",
+        "data center facility manager",
+        "controls engineer",
+        "solutions architect",
     ),
 )
 
-# Mom stays disabled until Alex's profile and delivery flow are fully validated.
+# Mom stays disabled until her dry-run profile is validated.
 PROFILES = (ALEX,)
