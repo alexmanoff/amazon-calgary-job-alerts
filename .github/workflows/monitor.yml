@@ -31,6 +31,12 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
+      - name: Test Telegram
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+        run: python test_telegram.py
       - name: Check jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
