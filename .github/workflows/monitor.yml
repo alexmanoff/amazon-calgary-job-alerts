@@ -6,7 +6,7 @@ on:
       initialize_only:
         description: Save current jobs without alerts
         required: false
-        default: true
+        default: false
         type: boolean
   schedule:
     - cron: "2-57/5 * * * *"
@@ -31,10 +31,7 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Diagnose Amazon Jobs
-        if: github.event_name == 'workflow_dispatch'
-        run: python diagnose_amazon_jobs.py
-      - name: Check HVR jobs
+      - name: Check Amazon jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
