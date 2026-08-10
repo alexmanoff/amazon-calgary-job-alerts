@@ -8,16 +8,6 @@ on:
         required: false
         default: false
         type: boolean
-      send_alex_test_alert:
-        description: Send Alex end-to-end test alert only
-        required: false
-        default: false
-        type: boolean
-      dry_run_mom:
-        description: Dry run Mom filters only (NO Telegram)
-        required: false
-        default: false
-        type: boolean
   schedule:
     - cron: "2-57/5 * * * *"
 
@@ -38,30 +28,20 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: |
+
+      - name: Install dependencies
+        run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Send Alex test alert
-        if: github.event_name == 'workflow_dispatch' && inputs.send_alex_test_alert && !inputs.dry_run_mom
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
-        run: python test_alex_alert.py
-      - name: Dry run Mom filters
-        if: github.event_name == 'workflow_dispatch' && inputs.dry_run_mom
-        run: python dry_run_mom_matches.py
-      - name: Dry run Alex filters
-        if: github.event_name == 'workflow_dispatch' && !inputs.send_alex_test_alert && !inputs.dry_run_mom
-        run: python dry_run_matches.py
+
       - name: Check Amazon jobs
-        if: github.event_name != 'workflow_dispatch' || (!inputs.send_alex_test_alert && !inputs.dry_run_mom)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
           INITIALIZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_only || 'false' }}
         run: python monitor.py
+
       - name: Save state
-        if: github.event_name != 'workflow_dispatch' || (!inputs.send_alex_test_alert && !inputs.dry_run_mom)
         run: |
           if git diff --quiet -- data/seen_jobs.json; then exit 0; fi
           git config user.name "amazon-job-monitor"
