@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      send_alex_test_alert:
+        description: Send Alex end-to-end test alert only
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "2-57/5 * * * *"
 
@@ -31,16 +36,24 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
+      - name: Send Alex test alert
+        if: github.event_name == 'workflow_dispatch' && inputs.send_alex_test_alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+        run: python test_alex_alert.py
       - name: Dry run Alex filters
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && !inputs.send_alex_test_alert
         run: python dry_run_matches.py
       - name: Check Amazon jobs
+        if: github.event_name != 'workflow_dispatch' || !inputs.send_alex_test_alert
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
           INITIALIZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_only || 'false' }}
         run: python monitor.py
       - name: Save state
+        if: github.event_name != 'workflow_dispatch' || !inputs.send_alex_test_alert
         run: |
           if git diff --quiet -- data/seen_jobs.json; then exit 0; fi
           git config user.name "amazon-job-monitor"
