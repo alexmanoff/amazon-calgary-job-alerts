@@ -31,9 +31,9 @@ jobs:
       - run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Diagnose Amazon GraphQL
+      - name: Diagnose Amazon Jobs
         if: github.event_name == 'workflow_dispatch'
-        run: python diagnose_graphql.py
+        run: python diagnose_amazon_jobs.py
       - name: Check HVR jobs
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
