@@ -6,7 +6,6 @@ from telegram_sender import send_message
 def main():
     recipients = [
         ("Alex", os.environ["ALEX_CHAT_ID"]),
-        ("Mom", os.environ["MOM_CHAT_ID"]),
     ]
 
     for name, chat_id in recipients:
