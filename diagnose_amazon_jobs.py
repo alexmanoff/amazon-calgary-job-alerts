@@ -1,6 +1,5 @@
 import re
-import requests
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 URL = (
     "https://www.amazon.jobs/en/search?"
@@ -11,64 +10,65 @@ URL = (
 
 
 def main():
-    response = requests.get(
-        URL,
-        headers={
-            "User-Agent": (
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(
+            locale="en-CA",
+            viewport={"width": 1440, "height": 1400},
+            user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/149.0.0.0 Safari/537.36"
             ),
-            "Accept-Language": "en-CA,en;q=0.9",
-        },
-        timeout=30,
-    )
-
-    print("HTTP STATUS:", response.status_code)
-    print("FINAL URL:", response.url)
-    print("CONTENT TYPE:", response.headers.get("content-type"))
-
-    if response.status_code != 200:
-        print("PAGE START:")
-        print(response.text[:2000])
-        return
-
-    soup = BeautifulSoup(response.text, "html.parser")
-    links = []
-    seen = set()
-
-    for link in soup.find_all("a", href=True):
-        href = link["href"]
-        if "/jobs/" not in href:
-            continue
-        if href.startswith("/"):
-            href = "https://www.amazon.jobs" + href
-        if href in seen:
-            continue
-        seen.add(href)
-
-        text = link.get_text(" ", strip=True)
-        container = link.find_parent(["article", "li", "div"])
-        container_text = container.get_text(" ", strip=True) if container else text
-        job_id_match = re.search(r"Job ID:\s*([A-Za-z0-9-]+)", container_text, re.I)
-
-        links.append(
-            {
-                "title": text,
-                "url": href,
-                "job_id": job_id_match.group(1) if job_id_match else "",
-                "text": container_text[:500],
-            }
         )
 
-    print("JOB LINKS FOUND:", len(links))
+        response = page.goto(URL, wait_until="domcontentloaded", timeout=90000)
+        page.wait_for_timeout(5000)
 
-    for item in links[:20]:
-        print("-" * 60)
-        print("TITLE:", item["title"])
-        print("JOB ID:", item["job_id"])
-        print("URL:", item["url"])
-        print("TEXT:", item["text"])
+        print("HTTP STATUS:", response.status if response else "NO RESPONSE")
+        print("FINAL URL:", page.url)
+        print("TITLE:", page.title())
+
+        body_text = page.locator("body").inner_text()
+        print("BODY TEXT LENGTH:", len(body_text))
+
+        all_links = page.locator("a").evaluate_all(
+            """els => els.map(a => ({
+                text: (a.innerText || '').trim(),
+                href: a.href || ''
+            }))"""
+        )
+
+        print("TOTAL LINKS:", len(all_links))
+
+        job_links = []
+        seen = set()
+        for item in all_links:
+            href = item.get("href", "")
+            if not re.search(r"amazon\.jobs/(?:en/)?jobs/\d+", href, re.I):
+                continue
+            if href in seen:
+                continue
+            seen.add(href)
+            job_links.append(item)
+
+        print("JOB LINKS FOUND:", len(job_links))
+
+        for item in job_links[:20]:
+            job_id_match = re.search(r"/jobs/(\d+)", item["href"])
+            print("-" * 60)
+            print("TITLE:", item["text"])
+            print("JOB ID:", job_id_match.group(1) if job_id_match else "")
+            print("URL:", item["href"])
+
+        ids_in_text = sorted(set(re.findall(r"Job ID:\s*(\d+)", body_text, re.I)))
+        print("JOB IDS IN BODY TEXT:", len(ids_in_text))
+        print("FIRST JOB IDS:", ids_in_text[:20])
+
+        print("\nBODY TEXT START:")
+        print(body_text[:5000])
+
+        browser.close()
 
 
 if __name__ == "__main__":
