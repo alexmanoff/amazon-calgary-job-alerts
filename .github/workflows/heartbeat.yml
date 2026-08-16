@@ -1,0 +1,24 @@
+name: Amazon job monitor heartbeat
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 18 1 * *"
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Send monthly heartbeat
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+        run: python heartbeat.py
