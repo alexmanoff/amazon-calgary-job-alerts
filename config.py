@@ -104,5 +104,4 @@ MOM = Profile(
     ),
 )
 
-# Mom stays disabled until her dry-run profile is validated.
-PROFILES = (ALEX,)
+PROFILES = (ALEX, MOM)
