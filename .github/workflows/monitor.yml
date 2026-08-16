@@ -38,6 +38,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+          MOM_CHAT_ID: ${{ secrets.MOM_CHAT_ID }}
           INITIALIZE_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_only || 'false' }}
         run: python monitor.py
 
