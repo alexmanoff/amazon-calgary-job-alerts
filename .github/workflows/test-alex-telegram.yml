@@ -1,0 +1,27 @@
+name: Test Telegram to Alex
+
+on:
+  push:
+    paths:
+      - ".github/workflows/test-alex-telegram.yml"
+
+jobs:
+  test:
+    if: github.event.head_commit.message == 'Run Telegram test for Alex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send Telegram test to Alex
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+        run: |
+          response=$(curl -sS -w "\n%{http_code}" -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\":\"${ALEX_CHAT_ID}\",\"text\":\"✅ Тест: бот может отправлять сообщения Алексу.\"}")
+          body=$(echo "$response" | sed '$d')
+          code=$(echo "$response" | tail -n1)
+          echo "Telegram HTTP status: $code"
+          echo "$body"
+          test "$code" = "200"
