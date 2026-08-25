@@ -1,0 +1,24 @@
+name: Preview Amazon alert to Alex
+
+on:
+  push:
+    paths:
+      - ".github/workflows/test-preview-alex.yml"
+
+jobs:
+  preview:
+    if: github.event.head_commit.message == 'Send alert preview to Alex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send preview to Alex
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALEX_CHAT_ID: ${{ secrets.ALEX_CHAT_ID }}
+        run: |
+          curl -fsS -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            --data-binary @- <<'JSON'
+          {"chat_id":"${ALEX_CHAT_ID}","text":"New Amazon job for Mom\n\nArea Manager, Early Career (2027) – Canada\nLocation: Calgary, AB, CAN\nMatched: area manager\nSource: amazon_jobs\n\nhttps://www.amazon.jobs/en/jobs/10485154/area-manager-early-career-2027-canada"}
+          JSON
