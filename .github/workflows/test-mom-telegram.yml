@@ -1,0 +1,27 @@
+name: Test Telegram to Mom
+
+on:
+  push:
+    paths:
+      - ".github/workflows/test-mom-telegram.yml"
+
+jobs:
+  test:
+    if: github.event.head_commit.message == 'Run Telegram test for Mom again'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Send Telegram test to Mom
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          MOM_CHAT_ID: ${{ secrets.MOM_CHAT_ID }}
+        run: |
+          response=$(curl -sS -w "\n%{http_code}" -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\":\"${MOM_CHAT_ID}\",\"text\":\"✅ Тестовое сообщение: уведомления о вакансиях Amazon подключены.\"}")
+          body=$(echo "$response" | sed '$d')
+          code=$(echo "$response" | tail -n1)
+          echo "Telegram HTTP status: $code"
+          echo "$body"
+          test "$code" = "200"
